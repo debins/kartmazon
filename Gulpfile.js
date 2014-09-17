@@ -19,6 +19,7 @@ gulp.task('vendor',function(){
 });
 
 paths.js = 'app/js/main.js'
+paths.jsAll = 'app/js/**/*.js'
 gulp.task('js', function () {
   gulp.src(paths.js)
     .pipe(browserify())
@@ -83,7 +84,7 @@ gulp.task('watch', function() {
   gulp.watch(paths.html, ['html']);
   gulp.watch(paths.templates,['templates']);
   gulp.watch(paths.css,['css']);
-  gulp.watch(paths.js,['js-dev']);
+  gulp.watch(paths.jsAll,['js-dev']);
 });
 
 

@@ -1,4 +1,12 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var Backbone = require('backbone'),
+    Marca     = require('../models/marca');
+
+module.exports = Backbone.Collection.extend({
+	model: Marca,
+	url: 'http://kartmazon.herokuapp.com/marca/'
+});
+},{"../models/marca":3,"backbone":7}],2:[function(require,module,exports){
 var Backbone    = require('backbone'),
     Router      = require('./routers/router'),
     $           = require('jquery');
@@ -8,23 +16,30 @@ var Backbone    = require('backbone'),
 $(function () {
 	Backbone.app = new Router();
 });
-},{"./routers/router":2,"backbone":5,"jquery":7}],2:[function(require,module,exports){
+},{"./routers/router":4,"backbone":7,"jquery":9}],3:[function(require,module,exports){
+var Backbone = require('backbone');
+
+module.exports = Backbone.Model.extend({
+	urlRoot : 'http://kartmazon.herokuapp.com/marca/'
+});
+},{"backbone":7}],4:[function(require,module,exports){
 var Backbone	= require('backbone'),
 	Utils		= require('../utils/utils');
 	ViewMain	= require('../views/main');
-	$			= require('jquery')
+	$			= require('jquery');
+	Marcas 		= require('../collections/marcas');
+	Marca 		= require('../models/marca');
 
 module.exports = Backbone.Router.extend({
 	routes:{
-		"" : "home",
-		"login":"login",
-		"hola":"test"
+		"" : "home"
 	},
 	initialize : function(){
 //		this.galleta = Utils.getCookie('debinConsul');
 		this.main = new ViewMain();
+		this.marcas = new Marcas();
 		Backbone.history.start({pushState: false});
-
+		
 		if (this.galleta == ""){
 //			this.navigate("login", {trigger: true});
 		}else{
@@ -35,17 +50,29 @@ module.exports = Backbone.Router.extend({
 	},
 	home:function(){
 		console.log("home");
+		this.fetchMarcas();
 	},
-	login:function(){
-		this.loginView = new Login();
-		this.loginView.render();
-	},
-	test:function(){
-		this.agendaView = new Agenda();
-		this.agendaView.render();
+	fetchMarcas:function(){
+		console.log("fetching marcas")
+		var self = this;
+		var x = this.marcas.fetch({
+			success: function(){
+				var marcas = self.marcas.toJSON();
+	        	for(var i=0;i<marcas.length;i++){
+	        		console.log(marcas[i].nombre);
+				}
+			}
+		});
+		
+		this.marca = new Marca({id: 1});
+		this.marca.fetch({
+			success:function(){
+				console.log(self.marca.toJSON().nombre);
+			}
+		});
 	}
 });
-},{"../utils/utils":3,"../views/main":4,"backbone":5,"jquery":7}],3:[function(require,module,exports){
+},{"../collections/marcas":1,"../models/marca":3,"../utils/utils":5,"../views/main":6,"backbone":7,"jquery":9}],5:[function(require,module,exports){
 module.exports = {
 	setCookie: function(cname,cvalue,exdays){
 		var d = new Date();
@@ -63,7 +90,7 @@ module.exports = {
 		return "";
 	}
 };
-},{}],4:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 var Backbone	= require('backbone'),
 	$			= require('jquery');
 
@@ -85,7 +112,7 @@ module.exports = Backbone.View.extend({
   		console.log(e.currentTarget.innerHTML);
   	}
 });
-},{"backbone":5,"jquery":7}],5:[function(require,module,exports){
+},{"backbone":7,"jquery":9}],7:[function(require,module,exports){
 //     Backbone.js 1.1.2
 
 //     (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -1695,7 +1722,7 @@ module.exports = Backbone.View.extend({
 
 }));
 
-},{"underscore":6}],6:[function(require,module,exports){
+},{"underscore":8}],8:[function(require,module,exports){
 //     Underscore.js 1.7.0
 //     http://underscorejs.org
 //     (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -3112,7 +3139,7 @@ module.exports = Backbone.View.extend({
   }
 }.call(this));
 
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.1.1
  * http://jquery.com/
@@ -12304,4 +12331,4 @@ return jQuery;
 
 }));
 
-},{}]},{},[1])
+},{}]},{},[2])

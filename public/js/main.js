@@ -1,12 +1,44 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var Backbone = require('backbone'),
-    Marca     = require('../models/marca');
+var Backbone 	= require('backbone'),
+    Marca     	= require('../models/marca'),
+    Globals		= require('../utils/Globals');
 
 module.exports = Backbone.Collection.extend({
 	model: Marca,
-	url: 'http://kartmazon.herokuapp.com/marca/'
+	url: function(){
+		return Globals.url+'marca/';
+	}
 });
-},{"../models/marca":3,"backbone":7}],2:[function(require,module,exports){
+},{"../models/marca":4,"../utils/Globals":7,"backbone":11}],2:[function(require,module,exports){
+var Backbone 	= require('backbone'),
+    Modelo     	= require('../models/modelo'),
+    Globals		= require('../utils/Globals');
+
+module.exports = Backbone.Collection.extend({
+	model: Modelo,
+	marcaID:0,
+	setMarcaID:function(id){
+		this.marcaID = id;
+	},
+	url: function(){
+		if(this.marcaID == 0){
+			return Globals.url+'modelo/';
+		}else{
+			return Globals.url+'modelo/?marca=' + this.marcaID;
+		}
+		
+	},
+	magiaPaginada:function(objeto){
+		this.reset();
+		var modelo = {};
+		for(var i=0;i<objeto.length;i++){
+			for(var j=0;j<objeto[i].results.length;j++){
+				this.add(new Modelo(objeto[i].results[j]));
+			}
+		}
+	}
+});
+},{"../models/modelo":5,"../utils/Globals":7,"backbone":11}],3:[function(require,module,exports){
 var Backbone    = require('backbone'),
     Router      = require('./routers/router'),
     $           = require('jquery');
@@ -16,19 +48,30 @@ var Backbone    = require('backbone'),
 $(function () {
 	Backbone.app = new Router();
 });
-},{"./routers/router":4,"backbone":7,"jquery":9}],3:[function(require,module,exports){
-var Backbone = require('backbone');
+},{"./routers/router":6,"backbone":11,"jquery":13}],4:[function(require,module,exports){
+var Backbone = require('backbone'),
+    Globals		= require('../utils/Globals');
 
 module.exports = Backbone.Model.extend({
-	urlRoot : 'http://kartmazon.herokuapp.com/marca/'
+	urlRoot : function(){
+		return Globals.url + 'marca/';
+	}
 });
-},{"backbone":7}],4:[function(require,module,exports){
+},{"../utils/Globals":7,"backbone":11}],5:[function(require,module,exports){
+var Backbone = require('backbone'),
+    Globals		= require('../utils/Globals');
+
+module.exports = Backbone.Model.extend({
+	urlRoot : function(){
+		return Globals.url + 'modelo/';
+	}
+});
+},{"../utils/Globals":7,"backbone":11}],6:[function(require,module,exports){
 var Backbone	= require('backbone'),
 	Utils		= require('../utils/utils');
 	ViewMain	= require('../views/main');
 	$			= require('jquery');
-	Marcas 		= require('../collections/marcas');
-	Marca 		= require('../models/marca');
+	BuscaView	= require('../views/buscar')
 
 module.exports = Backbone.Router.extend({
 	routes:{
@@ -37,7 +80,6 @@ module.exports = Backbone.Router.extend({
 	initialize : function(){
 //		this.galleta = Utils.getCookie('debinConsul');
 		this.main = new ViewMain();
-		this.marcas = new Marcas();
 		Backbone.history.start({pushState: false});
 		
 		if (this.galleta == ""){
@@ -49,30 +91,14 @@ module.exports = Backbone.Router.extend({
 		
 	},
 	home:function(){
-		console.log("home");
-		this.fetchMarcas();
-	},
-	fetchMarcas:function(){
-		console.log("fetching marcas")
-		var self = this;
-		var x = this.marcas.fetch({
-			success: function(){
-				var marcas = self.marcas.toJSON();
-	        	for(var i=0;i<marcas.length;i++){
-	        		console.log(marcas[i].nombre);
-				}
-			}
-		});
-		
-		this.marca = new Marca({id: 1});
-		this.marca.fetch({
-			success:function(){
-				console.log(self.marca.toJSON().nombre);
-			}
-		});
+		this.buscaView = new BuscaView();
 	}
 });
-},{"../collections/marcas":1,"../models/marca":3,"../utils/utils":5,"../views/main":6,"backbone":7,"jquery":9}],5:[function(require,module,exports){
+},{"../utils/utils":8,"../views/buscar":9,"../views/main":10,"backbone":11,"jquery":13}],7:[function(require,module,exports){
+module.exports = {
+	url:"http://kartmazon.herokuapp.com/"
+};
+},{}],8:[function(require,module,exports){
 module.exports = {
 	setCookie: function(cname,cvalue,exdays){
 		var d = new Date();
@@ -90,9 +116,76 @@ module.exports = {
 		return "";
 	}
 };
-},{}],6:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var Backbone	= require('backbone'),
-	$			= require('jquery');
+	$	     	= require('jquery');
+	Marcas 		= require('../collections/marcas');
+	Modelos 	= require('../collections/modelos');
+	Marca 		= require('../models/marca');
+
+module.exports = Backbone.View.extend({
+	el: $('#buscar'),
+	events:{
+		"change #buscarMarca"	: "cargarModelos"
+	},
+	initialize:function(){
+		this.marcas = new Marcas();
+		this.modelos = new Modelos();
+		this.listenTo(this.marcas,'add',this.addOneMarca,this);
+		this.listenTo(this.modelos,'add',this.addOneModelo,this);
+		this.fetchMarcas();
+	},
+	renderMarcas:function(){
+		this.marcas.forEach(this.addOneMarca,this);
+	},
+	renderModelos:function(){
+		this.modelos.forEach(this.addOneModelo,this);
+	},	
+	addOneMarca:function(marca){
+		this.$el.find("#buscarMarca").append("<option value="+marca.toJSON().id+">" + marca.toJSON().nombre+ "</option>");
+	},
+	addOneModelo:function(modelo){
+		this.$el.find('#buscarModelo').append("<option>"+modelo.toJSON().nombre+"</option>");
+	},
+	cargarModelos:function(e){
+		console.log("cargando modelos "+e.currentTarget.value);
+		this.$el.find('#buscarModelo').html("")
+		this.modelos = new Modelos();
+		var self = this;
+		this.modelos.setMarcaID(e.currentTarget.value);
+		this.modelos.fetch({
+			success:function(){
+				self.modelos.magiaPaginada(self.modelos.toJSON());
+				if(self.modelos.length<1){
+					self.modelos.add({value:0,nombre:"Sin modelos"});
+				}
+				self.renderModelos();
+				console.log(self.modelos.length);
+			}
+		});
+		console.log(this.modelos.marcaID);
+	},
+	fetchMarcas:function(){
+		var self = this;
+		var x = this.marcas.fetch({
+			success: function(){
+				//var marcas = self.marcas.toJSON();
+				//console.log(marcas.length);
+			}
+		});
+	},fetchMarca:function(){
+		var self = this;
+		this.marca = new Marca({id: 1});
+		this.marca.fetch({
+			success:function(){
+				console.log(self.marca.toJSON().nombre);
+			}
+		});
+	}
+});
+},{"../collections/marcas":1,"../collections/modelos":2,"../models/marca":4,"backbone":11,"jquery":13}],10:[function(require,module,exports){
+var Backbone	= require('backbone'),
+	  $	     		= require('jquery');
 
 module.exports = Backbone.View.extend({
 	el: document,
@@ -112,7 +205,7 @@ module.exports = Backbone.View.extend({
   		console.log(e.currentTarget.innerHTML);
   	}
 });
-},{"backbone":7,"jquery":9}],7:[function(require,module,exports){
+},{"backbone":11,"jquery":13}],11:[function(require,module,exports){
 //     Backbone.js 1.1.2
 
 //     (c) 2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -1722,7 +1815,7 @@ module.exports = Backbone.View.extend({
 
 }));
 
-},{"underscore":8}],8:[function(require,module,exports){
+},{"underscore":12}],12:[function(require,module,exports){
 //     Underscore.js 1.7.0
 //     http://underscorejs.org
 //     (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -3139,7 +3232,7 @@ module.exports = Backbone.View.extend({
   }
 }.call(this));
 
-},{}],9:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.1.1
  * http://jquery.com/
@@ -12331,4 +12424,4 @@ return jQuery;
 
 }));
 
-},{}]},{},[2])
+},{}]},{},[3])

@@ -1,5 +1,5 @@
 var Backbone	= require('backbone'),
-	$			= require('jquery');
+	  $	     		= require('jquery');
 
 module.exports = Backbone.View.extend({
 	el: document,

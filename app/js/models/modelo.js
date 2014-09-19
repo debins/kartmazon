@@ -3,6 +3,6 @@ var Backbone = require('backbone'),
 
 module.exports = Backbone.Model.extend({
 	urlRoot : function(){
-		return Globals.url + 'marca/';
+		return Globals.url + 'modelo/';
 	}
 });

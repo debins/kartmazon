@@ -145,7 +145,7 @@ module.exports = Backbone.View.extend({
 		this.$el.find("#buscarMarca").append("<option value="+marca.toJSON().id+">" + marca.toJSON().nombre+ "</option>");
 	},
 	addOneModelo:function(modelo){
-		this.$el.find('#buscarModelo').append("<option>"+modelo.toJSON().nombre+"</option>");
+		this.$el.find('#buscarModelo').prepend("<option>"+modelo.toJSON().nombre+"</option>");
 	},
 	cargarModelos:function(e){
 		console.log("cargando modelos "+e.currentTarget.value);

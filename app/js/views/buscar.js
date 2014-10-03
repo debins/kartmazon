@@ -36,7 +36,6 @@ module.exports = Backbone.View.extend({
 		this.modelos.setMarcaID(e.currentTarget.value);
 		this.modelos.fetch({
 			success:function(){
-				self.modelos.magiaPaginada(self.modelos.toJSON());
 				if(self.modelos.length<1){
 					self.modelos.add({value:0,nombre:"Sin modelos"});
 				}

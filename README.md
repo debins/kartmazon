@@ -1,5 +1,1 @@
-kartmazon
-=========
-
-
-El mundo kartmazon D:
+Kartmazon para la vida
